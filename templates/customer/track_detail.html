@@ -1,0 +1,94 @@
+{% extends 'base.html' %}
+
+{% block title %}Track Order #{{ order.order_code }} | EGGIFY{% endblock %}
+
+{% block content %}
+<div class="py-8 sm:py-12 bg-gray-50">
+    <div class="max-w-3xl mx-auto px-4 sm:px-6">
+
+        <!-- Top breadcrumb -->
+        <div class="mb-6 flex items-center justify-between">
+            <a href="{{ url_for('customer.track_lookup') }}" class="text-xs text-gray-500 hover:text-gray-900 font-semibold flex items-center">
+                <i class="fa-solid fa-arrow-left mr-1.5"></i> Track Another Order
+            </a>
+            <span class="text-xs font-mono font-bold text-gray-500">
+                Created: {{ order.created_at.strftime('%d %b, %I:%M %p') }}
+            </span>
+        </div>
+
+        <!-- Order Header Card -->
+        <div class="bg-white rounded-3xl border border-gray-200 shadow-xl overflow-hidden mb-8">
+            <div class="bg-egg-dark text-white p-6 sm:p-8 border-b border-gray-800 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div>
+                    <div class="flex items-center space-x-2 mb-1">
+                        <span class="text-xs font-bold text-amber-400 uppercase tracking-wider">Live Tracking</span>
+                        <span class="text-xs px-2.5 py-0.5 rounded-full font-bold {{ order.status_badge_class }}">
+                            {{ order.status_human_label }}
+                        </span>
+                    </div>
+                    <h2 class="text-2xl font-black font-outfit text-white">#{{ order.order_code }}</h2>
+                    <p class="text-xs text-gray-300 mt-1">
+                        {{ order.egg_quantity }} Fresh Normal Eggs • {{ order.gym.name if order.gym else 'Home Delivery' }}
+                    </p>
+                </div>
+
+                <div class="sm:text-right bg-gray-800/80 p-3 rounded-2xl border border-gray-700">
+                    <span class="text-[10px] text-gray-400 block uppercase font-mono">Fulfillment Target</span>
+                    <strong class="text-amber-400 text-sm font-outfit block">{{ order.preferred_date.strftime('%a, %d %b %Y') }}</strong>
+                    <span class="text-[11px] text-gray-300">{{ order.preferred_time_slot }}</span>
+                </div>
+            </div>
+
+            <!-- Visual 6-Stage Tracking Timeline -->
+            <div class="p-6 sm:p-8">
+                <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-6">Fulfillment Progress</h3>
+
+                <div class="space-y-6 relative before:absolute before:inset-0 before:left-5 before:w-0.5 before:bg-gray-200 before:top-4 before:bottom-4">
+                    {% for stage in stages %}
+                    {% set is_completed = loop.index0 <= current_index %}
+                    {% set is_current = loop.index0 == current_index %}
+                    <div class="relative flex items-start space-x-4">
+                        
+                        <!-- Stage Indicator Icon Circle -->
+                        <div class="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 z-10 border-2 transition-all {% if is_current %}bg-amber-500 text-egg-dark border-amber-400 ring-4 ring-amber-400/20 shadow-lg{% elif is_completed %}bg-emerald-600 text-white border-emerald-500{% else %}bg-gray-100 text-gray-400 border-gray-300{% endif %}">
+                            <i class="fa-solid {{ stage.icon }} text-sm"></i>
+                        </div>
+
+                        <!-- Stage Details -->
+                        <div class="flex-grow pt-1">
+                            <div class="flex items-center justify-between">
+                                <h4 class="text-sm font-extrabold font-outfit {% if is_current %}text-amber-600{% elif is_completed %}text-gray-900{% else %}text-gray-400{% endif %}">
+                                    {{ stage.title }}
+                                </h4>
+                                {% if is_current %}
+                                <span class="text-[10px] bg-amber-100 text-amber-800 font-bold px-2 py-0.5 rounded-full animate-pulse">
+                                    Current Stage
+                                </span>
+                                {% elif is_completed %}
+                                <span class="text-[10px] text-emerald-600 font-bold">
+                                    <i class="fa-solid fa-check"></i> Done
+                                </span>
+                                {% endif %}
+                            </div>
+                            <p class="text-xs {% if is_completed %}text-gray-600{% else %}text-gray-400{% endif %} mt-0.5 leading-relaxed">
+                                {{ stage.desc }}
+                            </p>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+
+                <!-- Pickup Guidance box -->
+                <div class="mt-8 bg-gray-50 rounded-2xl p-4 border border-gray-200 text-xs text-gray-600 space-y-1">
+                    <p class="font-bold text-gray-800"><i class="fa-solid fa-circle-info text-amber-500 mr-1"></i> Gym Collection Instructions:</p>
+                    <p>
+                        On the morning of <strong>{{ order.preferred_date.strftime('%d %b %Y') }}</strong>, your fresh eggs will be waiting at the reception of <strong>{{ order.gym.name if order.gym else 'your selected location' }}</strong>. Simply show your Order ID <strong>#{{ order.order_code }}</strong> or phone number to collect.
+                    </p>
+                </div>
+
+            </div>
+        </div>
+
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wholesale Slip #{{ batch.batch_code }} | EGGIFY</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @media print {
+            .no-print { display: none !important; }
+            body { background: white !important; }
+        }
+    </style>
+</head>
+<body class="bg-gray-100 text-gray-900 font-sans p-6 sm:p-12">
+
+    <div class="max-w-2xl mx-auto bg-white rounded-2xl shadow-xl p-8 border border-gray-200">
+        
+        <!-- Header -->
+        <div class="flex items-center justify-between border-b pb-6">
+            <div>
+                <h1 class="text-3xl font-black font-outfit text-gray-900 tracking-wider">EGG<span class="text-amber-500">IFY</span></h1>
+                <p class="text-xs text-gray-500">Farm Wholesale Egg Purchase Order Slip</p>
+            </div>
+            <div class="text-right">
+                <span class="text-xs font-mono font-bold text-gray-400 block">PURCHASE BATCH</span>
+                <span class="text-lg font-mono font-black text-gray-900">#{{ batch.batch_code }}</span>
+                <span class="text-xs text-gray-500 block">{{ batch.purchase_date.strftime('%d %B %Y') }}</span>
+            </div>
+        </div>
+
+        <!-- Supplier & Business Meta -->
+        <div class="grid grid-cols-2 gap-6 py-6 border-b text-xs">
+            <div>
+                <span class="text-gray-400 uppercase font-bold block mb-1">Poultry Supplier:</span>
+                <strong class="text-sm font-bold text-gray-900 block">{{ batch.supplier.name }}</strong>
+                <p class="text-gray-600">{{ batch.supplier.location }}</p>
+                <p class="text-gray-600">Contact: {{ batch.supplier.phone }}</p>
+            </div>
+            <div class="text-right">
+                <span class="text-gray-400 uppercase font-bold block mb-1">Purchaser:</span>
+                <strong class="text-sm font-bold text-gray-900 block">EGGIFY Fresh Foods</strong>
+                <p class="text-gray-600">Bangalore Multi-Gym Distribution</p>
+                <p class="text-gray-600">Care: +91 98765 43210</p>
+            </div>
+        </div>
+
+        <!-- Itemized Table -->
+        <div class="py-6">
+            <table class="w-full text-left text-xs">
+                <thead>
+                    <tr class="border-b text-gray-400 uppercase">
+                        <th class="py-2">Item Description</th>
+                        <th class="py-2 text-center">Crates (30 eggs/crate)</th>
+                        <th class="py-2 text-center">Egg Qty</th>
+                        <th class="py-2 text-right">Cost / Egg</th>
+                        <th class="py-2 text-right">Subtotal</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y font-medium text-gray-800">
+                    <tr>
+                        <td class="py-4">
+                            <strong class="text-gray-900 block">Standard Fresh Farm Eggs (Normal)</strong>
+                            <span class="text-gray-400 text-[11px]">Sanitized, unboiled, graded</span>
+                        </td>
+                        <td class="py-4 text-center font-bold">{{ (batch.total_eggs / 30)|round(1) }}</td>
+                        <td class="py-4 text-center font-black text-sm">{{ batch.total_eggs }}</td>
+                        <td class="py-4 text-right">₹{{ "%.2f"|format(batch.price_per_egg) }}</td>
+                        <td class="py-4 text-right font-black text-sm">₹{{ "%.2f"|format(batch.total_cost) }}</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Total Box -->
+        <div class="border-t pt-4 flex justify-between items-baseline text-sm">
+            <span class="font-bold text-gray-600">Total Purchase Cost:</span>
+            <span class="text-2xl font-black text-amber-600 font-outfit">₹{{ "%.2f"|format(batch.total_cost) }}</span>
+        </div>
+
+        {% if batch.notes %}
+        <div class="mt-4 p-3 bg-gray-50 rounded-xl border text-xs text-gray-600">
+            <strong>Notes:</strong> {{ batch.notes }}
+        </div>
+        {% endif %}
+
+        <!-- Signatures -->
+        <div class="grid grid-cols-2 gap-8 pt-12 text-center text-xs text-gray-400">
+            <div class="border-t border-gray-300 pt-2">
+                <span>Supplier Receiver Signature</span>
+            </div>
+            <div class="border-t border-gray-300 pt-2">
+                <span>Authorized EGGIFY Proprietor</span>
+            </div>
+        </div>
+
+        <!-- Print Action -->
+        <div class="mt-8 pt-4 border-t flex justify-end space-x-3 no-print">
+            <button onclick="window.print()" class="px-5 py-2.5 bg-gray-900 text-white rounded-xl text-xs font-bold hover:bg-black transition">
+                Print Purchase Slip
+            </button>
+        </div>
+
+    </div>
+
+</body>
+</html>

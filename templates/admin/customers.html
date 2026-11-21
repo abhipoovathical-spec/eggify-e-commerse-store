@@ -1,0 +1,67 @@
+{% extends 'admin/layout.html' %}
+
+{% block page_title %}Customer Directory & Lifetime Value CRM{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+
+    <!-- Search & Summary Bar -->
+    <div class="bg-white p-5 rounded-3xl border border-gray-200 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div>
+            <h2 class="text-lg font-extrabold font-outfit text-gray-900">Gym Members & Athletes Database</h2>
+            <p class="text-xs text-gray-500">Customers aggregated automatically through phone numbers without forced registrations.</p>
+        </div>
+
+        <form method="GET" action="{{ url_for('admin.customers') }}" class="w-full sm:w-auto flex items-center space-x-2">
+            <input type="text" name="search" value="{{ search }}" placeholder="Search customer name or phone..." class="w-full sm:w-64 bg-gray-50 border border-gray-300 rounded-xl px-3.5 py-2 text-xs font-semibold focus:ring-2 focus:ring-amber-500 focus:outline-none">
+            <button type="submit" class="px-4 py-2 bg-egg-dark text-white rounded-xl text-xs font-bold hover:bg-gray-800 transition">
+                Search
+            </button>
+        </form>
+    </div>
+
+    <!-- Customers CRM Table -->
+    <div class="bg-white rounded-3xl border border-gray-200 shadow-sm overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs">
+                <thead class="bg-gray-50 text-gray-500 font-bold uppercase tracking-wider border-b border-gray-200">
+                    <tr>
+                        <th class="py-3.5 px-4">Customer Name</th>
+                        <th class="py-3.5 px-4">Mobile Number</th>
+                        <th class="py-3.5 px-4">Primary Gym Hub</th>
+                        <th class="py-3.5 px-4">Total Orders</th>
+                        <th class="py-3.5 px-4">Total Eggs Consumed</th>
+                        <th class="py-3.5 px-4">Lifetime Spend</th>
+                        <th class="py-3.5 px-4 text-right">Last Order</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-100 font-medium">
+                    {% for c in customers %}
+                    <tr class="hover:bg-gray-50 transition">
+                        <td class="py-3.5 px-4 font-bold text-gray-900">
+                            {{ c.name }}
+                            {% if c.email %}
+                            <span class="text-[10px] text-gray-400 block font-normal">{{ c.email }}</span>
+                            {% endif %}
+                        </td>
+                        <td class="py-3.5 px-4 font-mono font-semibold text-gray-700">+91 {{ c.phone }}</td>
+                        <td class="py-3.5 px-4 text-gray-600">{{ c.primary_gym.name if c.primary_gym else 'Multiple Gyms' }}</td>
+                        <td class="py-3.5 px-4 font-bold text-gray-900">{{ c.total_orders or 0 }}</td>
+                        <td class="py-3.5 px-4 font-black text-amber-600 font-outfit text-sm">{{ c.total_eggs or 0 }} eggs</td>
+                        <td class="py-3.5 px-4 font-bold text-emerald-600 font-outfit text-sm">₹{{ "%.2f"|format(c.total_spent or 0.0) }}</td>
+                        <td class="py-3.5 px-4 text-right text-gray-500 text-[11px]">
+                            {{ c.last_order_date.strftime('%d %b %Y') if c.last_order_date else '-' }}
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="7" class="py-8 text-center text-gray-400">No customers found.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+{% endblock %}

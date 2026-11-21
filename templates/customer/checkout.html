@@ -1,0 +1,176 @@
+{% extends 'base.html' %}
+
+{% block title %}Complete UPI Payment | Order #{{ order.order_code }}{% endblock %}
+
+{% block content %}
+<div class="py-8 sm:py-12 bg-gray-50">
+    <div class="max-w-2xl mx-auto px-4 sm:px-6">
+
+        <!-- Top breadcrumb / status -->
+        <div class="mb-6 flex items-center justify-between">
+            <a href="{{ url_for('customer.order_page') }}" class="text-xs text-gray-500 hover:text-gray-900 font-semibold flex items-center">
+                <i class="fa-solid fa-arrow-left mr-1.5"></i> Back to Order Form
+            </a>
+            <span class="text-xs bg-amber-100 text-amber-800 font-bold px-3 py-1 rounded-full border border-amber-300">
+                Payment Pending
+            </span>
+        </div>
+
+        <div class="bg-white rounded-3xl border border-gray-200 shadow-xl overflow-hidden">
+            <!-- Header bar -->
+            <div class="bg-egg-dark text-white p-6 sm:p-8 border-b border-gray-800">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <span class="text-xs uppercase font-bold text-amber-400">Secure UPI Checkout</span>
+                        <h2 class="text-2xl font-black font-outfit text-white">Pay for Order #{{ order.order_code }}</h2>
+                    </div>
+                    <div class="text-right">
+                        <span class="text-xs text-gray-400 block">Total Payable</span>
+                        <span class="text-3xl font-black font-outfit text-amber-400">₹{{ "%.2f"|format(order.total_amount) }}</span>
+                    </div>
+                </div>
+
+                <!-- Order summary pills -->
+                <div class="grid grid-cols-2 sm:grid-cols-3 gap-2 mt-4 text-xs font-medium text-gray-300">
+                    <div class="bg-gray-800/80 p-2 rounded-xl">
+                        <span class="text-gray-400 block text-[10px]">Quantity</span>
+                        <span class="text-white font-bold">{{ order.egg_quantity }} Fresh Eggs</span>
+                    </div>
+                    <div class="bg-gray-800/80 p-2 rounded-xl">
+                        <span class="text-gray-400 block text-[10px]">Gym Location</span>
+                        <span class="text-white font-bold truncate block">{{ order.gym.name if order.gym else 'Home Delivery' }}</span>
+                    </div>
+                    <div class="bg-gray-800/80 p-2 rounded-xl col-span-2 sm:col-span-1">
+                        <span class="text-gray-400 block text-[10px]">Fulfillment Date</span>
+                        <span class="text-white font-bold">{{ order.preferred_date.strftime('%d %b %Y') }}</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Payment Body -->
+            <div class="p-6 sm:p-8 space-y-6">
+
+                <!-- Dynamic UPI QR Scanner Area -->
+                <div class="bg-gray-50 p-6 rounded-3xl border border-gray-200 text-center space-y-4">
+                    <div class="inline-block p-4 bg-white rounded-2xl border-2 border-amber-400 shadow-md">
+                        <img src="{{ upi_data.qr_data_url }}" alt="Scan UPI QR" class="w-52 h-52 mx-auto rounded-lg">
+                    </div>
+
+                    <div class="space-y-1">
+                        <h4 class="text-base font-extrabold text-gray-900 font-outfit">Scan QR with Any UPI App</h4>
+                        <p class="text-xs text-gray-500">Google Pay, PhonePe, Paytm, BHIM, Cred, or Mobile Banking</p>
+                    </div>
+
+                    <!-- Copy UPI ID Pill -->
+                    <div class="inline-flex items-center space-x-2 bg-white px-3.5 py-1.5 rounded-full border border-gray-300 text-xs font-mono font-semibold text-gray-700 shadow-sm">
+                        <span>UPI ID: <strong id="merchantUpi">{{ upi_data.upi_id }}</strong></span>
+                        <button type="button" onclick="copyUpiId()" class="text-amber-600 hover:text-amber-700 font-bold ml-2">
+                            <i class="fa-regular fa-copy"></i> Copy
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 1-Click Mobile UPI Intent Buttons (For mobile customers) -->
+                <div class="space-y-2">
+                    <span class="text-xs font-bold text-gray-400 uppercase tracking-wider block text-center">Or Open Direct UPI App</span>
+                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                        <a href="{{ upi_data.upi_uri }}" class="flex items-center justify-center space-x-1.5 p-3 rounded-xl border border-gray-200 bg-white hover:bg-gray-50 text-xs font-bold text-gray-800 shadow-sm transition">
+                            <i class="fa-brands fa-google text-blue-500"></i>
+                            <span>Google Pay</span>
+                        </a>
+                        <a href="{{ upi_data.upi_uri }}" class="flex items-center justify-center space-x-1.5 p-3 rounded-xl border border-gray-200 bg-white hover:bg-gray-50 text-xs font-bold text-gray-800 shadow-sm transition">
+                            <i class="fa-solid fa-mobile-screen text-purple-600"></i>
+                            <span>PhonePe</span>
+                        </a>
+                        <a href="{{ upi_data.upi_uri }}" class="flex items-center justify-center space-x-1.5 p-3 rounded-xl border border-gray-200 bg-white hover:bg-gray-50 text-xs font-bold text-gray-800 shadow-sm transition">
+                            <i class="fa-solid fa-wallet text-sky-500"></i>
+                            <span>Paytm</span>
+                        </a>
+                        <a href="{{ upi_data.upi_uri }}" class="flex items-center justify-center space-x-1.5 p-3 rounded-xl border border-gray-200 bg-white hover:bg-gray-50 text-xs font-bold text-gray-800 shadow-sm transition">
+                            <i class="fa-solid fa-qrcode text-amber-500"></i>
+                            <span>Any UPI</span>
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Step: Enter UTR / Confirm Payment -->
+                <div class="bg-amber-50/70 p-5 rounded-2xl border border-amber-200 space-y-4">
+                    <div>
+                        <h4 class="text-sm font-extrabold text-amber-950 font-outfit">Step 2: Confirm Your Transaction</h4>
+                        <p class="text-xs text-amber-800 mt-0.5">
+                            After sending ₹{{ "%.2f"|format(order.total_amount) }}, enter the 12-digit UPI Reference / UTR Number from your app receipt.
+                        </p>
+                    </div>
+
+                    <div class="space-y-3">
+                        <div>
+                            <label for="utr_input" class="block text-xs font-bold text-gray-700 mb-1">
+                                UPI Reference Number / UTR (or leave blank to auto-verify)
+                            </label>
+                            <input type="text" id="utr_input" placeholder="e.g. 432189012345" class="w-full bg-white border border-gray-300 rounded-xl px-4 py-2.5 text-sm font-mono font-semibold text-gray-900 focus:ring-2 focus:ring-amber-500 focus:outline-none">
+                        </div>
+
+                        <button type="button" id="verifyPaymentBtn" class="w-full py-3.5 bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold rounded-xl shadow-lg shadow-emerald-600/20 text-sm transition flex items-center justify-center space-x-2">
+                            <i class="fa-solid fa-circle-check"></i>
+                            <span>I Have Completed Payment (Verify Now)</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Security guarantee note -->
+                <div class="text-[11px] text-gray-500 text-center flex items-center justify-center space-x-2">
+                    <i class="fa-solid fa-shield-halved text-emerald-600"></i>
+                    <span>256-bit encrypted transaction • Instant receipt • Verified poultry supply</span>
+                </div>
+
+            </div>
+        </div>
+
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+function copyUpiId() {
+    const text = document.getElementById('merchantUpi').innerText;
+    navigator.clipboard.writeText(text).then(() => {
+        alert('UPI ID copied to clipboard: ' + text);
+    });
+}
+
+document.getElementById('verifyPaymentBtn').addEventListener('click', function() {
+    const btn = this;
+    const utr = document.getElementById('utr_input').value.trim();
+    
+    btn.disabled = true;
+    btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin mr-2"></i> Verifying with Payment Gateway...`;
+
+    fetch('/api/payment/verify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            order_code: "{{ order.order_code }}",
+            transaction_id: utr || null,
+            payment_method: 'UPI'
+        })
+    })
+    .then(r => r.json())
+    .then(res => {
+        if (res.status === 'success') {
+            window.location.href = res.redirect_url;
+        } else {
+            alert(res.message || 'Payment verification failed.');
+            btn.disabled = false;
+            btn.innerHTML = `<i class="fa-solid fa-circle-check"></i> I Have Completed Payment (Verify Now)`;
+        }
+    })
+    .catch(err => {
+        console.error(err);
+        alert('Verification error. Please try again.');
+        btn.disabled = false;
+        btn.innerHTML = `<i class="fa-solid fa-circle-check"></i> I Have Completed Payment (Verify Now)`;
+    });
+});
+</script>
+{% endblock %}

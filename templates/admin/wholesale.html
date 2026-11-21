@@ -1,0 +1,220 @@
+{% extends 'admin/layout.html' %}
+
+{% block page_title %}Wholesale Sourcing & Purchase Automation{% endblock %}
+
+{% block content %}
+<div class="space-y-8">
+
+    <!-- Header Description -->
+    <div class="bg-egg-dark text-white p-6 sm:p-8 rounded-3xl border border-gray-800 shadow-xl flex flex-col md:flex-row items-center justify-between gap-6">
+        <div class="space-y-2">
+            <span class="text-xs uppercase font-black tracking-wider text-amber-400">Core Mediator Engine</span>
+            <h2 class="text-2xl font-black font-outfit text-white">Aggregated Wholesale Demand & Procurement</h2>
+            <p class="text-xs text-gray-400 max-w-2xl leading-relaxed">
+                This engine automatically aggregates all confirmed, paid orders across every partner gym, compares stock vs demand, and generates the exact wholesale purchase batch for poultry suppliers without double counting.
+            </p>
+        </div>
+        <div class="bg-gray-800/80 p-4 rounded-2xl border border-gray-700 text-center min-w-[180px]">
+            <span class="text-[10px] text-gray-400 uppercase font-mono">Current Holding Stock</span>
+            <span class="text-3xl font-black font-outfit text-amber-400 block">{{ demand.available_stock }}</span>
+            <span class="text-[10px] text-emerald-400 font-semibold">Available Unallocated</span>
+        </div>
+    </div>
+
+    <!-- 4 STEP DEMAND CALCULATION CARDS -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+        
+        <div class="bg-white p-5 rounded-3xl border border-gray-200 shadow-sm space-y-2">
+            <span class="text-xs font-bold text-gray-400 uppercase tracking-wider">Confirmed Gym Orders</span>
+            <h3 class="text-3xl font-black font-outfit text-gray-900">{{ demand.total_orders_count }}</h3>
+            <span class="text-[11px] text-gray-500">Paid & waiting for sourcing</span>
+        </div>
+
+        <div class="bg-white p-5 rounded-3xl border border-gray-200 shadow-sm space-y-2">
+            <span class="text-xs font-bold text-gray-400 uppercase tracking-wider">Total Eggs Required</span>
+            <h3 class="text-3xl font-black font-outfit text-amber-600">{{ demand.total_eggs_required }}</h3>
+            <span class="text-[11px] text-gray-500">Aggregated customer demand</span>
+        </div>
+
+        <div class="bg-white p-5 rounded-3xl border border-gray-200 shadow-sm space-y-2">
+            <span class="text-xs font-bold text-gray-400 uppercase tracking-wider">Net Eggs to Buy</span>
+            <h3 class="text-3xl font-black font-outfit text-rose-600">{{ demand.additional_to_purchase }}</h3>
+            <span class="text-[11px] text-gray-500">Requirement minus available stock</span>
+        </div>
+
+        <div class="bg-white p-5 rounded-3xl border border-gray-200 shadow-sm space-y-2">
+            <span class="text-xs font-bold text-gray-400 uppercase tracking-wider">Est. Wholesale Gross Profit</span>
+            <h3 class="text-3xl font-black font-outfit text-emerald-600">₹{{ "%.2f"|format(demand.estimated_gross_profit) }}</h3>
+            <span class="text-[11px] text-gray-500">Revenue (₹{{ "%.2f"|format(demand.expected_sales_revenue) }}) - Cost (₹{{ "%.2f"|format(demand.estimated_cost) }})</span>
+        </div>
+
+    </div>
+
+    <!-- SUPPLIER PRICE BENCHMARKING & BATCH PURCHASE FORM -->
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+        
+        <!-- Sourcing Execution Form -->
+        <div class="lg:col-span-7 bg-white rounded-3xl border border-gray-200 p-6 sm:p-8 shadow-sm space-y-6">
+            <div class="border-b border-gray-100 pb-4">
+                <span class="text-xs font-bold text-amber-600 uppercase tracking-wider">Procurement Action</span>
+                <h3 class="text-lg font-extrabold font-outfit text-gray-900">Record Wholesale Purchase Batch</h3>
+                <p class="text-xs text-gray-500">Auto-allocates eggs to pending orders and updates inventory stock balance.</p>
+            </div>
+
+            <form action="{{ url_for('admin.execute_purchase') }}" method="POST" class="space-y-4">
+                <div>
+                    <label for="supplier_id" class="block text-xs font-bold text-gray-700 mb-1">Select Wholesale Supplier <span class="text-rose-500">*</span></label>
+                    <select name="supplier_id" id="supplier_id" class="w-full bg-gray-50 border border-gray-300 rounded-xl px-4 py-2.5 text-xs font-semibold focus:ring-2 focus:ring-amber-500 focus:outline-none" required onchange="updateSupplierRate(this)">
+                        {% for s in suppliers %}
+                        <option value="{{ s.id }}" data-rate="{{ s.price_per_egg }}" {% if s.is_preferred %}selected{% endif %}>
+                            {{ s.name }} — ₹{{ "%.2f"|format(s.price_per_egg) }}/egg (MOQ: {{ s.min_order_qty }}) {% if s.is_preferred %}★ Preferred{% endif %}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label for="quantity" class="block text-xs font-bold text-gray-700 mb-1">Quantity of Eggs to Purchase <span class="text-rose-500">*</span></label>
+                        <input type="number" name="quantity" id="quantity" value="{{ demand.additional_to_purchase if demand.additional_to_purchase > 0 else 150 }}" min="30" step="30" class="w-full bg-gray-50 border border-gray-300 rounded-xl px-4 py-2.5 text-sm font-black font-outfit focus:ring-2 focus:ring-amber-500 focus:outline-none" required oninput="recalcWholesaleCost()">
+                        <span class="text-[10px] text-gray-400">Sold in crates of 30</span>
+                    </div>
+
+                    <div>
+                        <label for="price_per_egg" class="block text-xs font-bold text-gray-700 mb-1">Wholesale Cost per Egg (₹) <span class="text-rose-500">*</span></label>
+                        <input type="number" step="0.05" name="price_per_egg" id="price_per_egg" value="{{ demand.estimated_cost_rate }}" class="w-full bg-gray-50 border border-gray-300 rounded-xl px-4 py-2.5 text-sm font-semibold focus:ring-2 focus:ring-amber-500 focus:outline-none" required oninput="recalcWholesaleCost()">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label for="invoice_number" class="block text-xs font-bold text-gray-700 mb-1">Supplier Invoice / Bill Ref</label>
+                        <input type="text" name="invoice_number" id="invoice_number" placeholder="e.g. SLP-BATCH-1092" class="w-full bg-gray-50 border border-gray-300 rounded-xl px-4 py-2 text-xs font-semibold focus:ring-2 focus:ring-amber-500 focus:outline-none">
+                    </div>
+
+                    <div class="bg-amber-50 p-3 rounded-xl border border-amber-200 flex flex-col justify-center">
+                        <span class="text-[10px] text-amber-800 uppercase font-bold">Total Batch Cost:</span>
+                        <span id="calculatedBatchCost" class="text-xl font-black font-outfit text-amber-950">₹0.00</span>
+                    </div>
+                </div>
+
+                <div>
+                    <label for="notes" class="block text-xs font-bold text-gray-700 mb-1">Batch Notes</label>
+                    <input type="text" name="notes" id="notes" placeholder="e.g. Scheduled for 5:30 AM farm delivery" class="w-full bg-gray-50 border border-gray-300 rounded-xl px-4 py-2 text-xs focus:ring-2 focus:ring-amber-500 focus:outline-none">
+                </div>
+
+                <div class="pt-2">
+                    <button type="submit" class="w-full py-3.5 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-egg-dark font-black rounded-xl text-sm transition shadow-lg shadow-amber-500/20 font-outfit">
+                        Confirm Purchase Batch & Advance Orders <i class="fa-solid fa-arrow-right ml-1"></i>
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Supplier Price Comparison Table -->
+        <div class="lg:col-span-5 bg-white rounded-3xl border border-gray-200 p-6 shadow-sm space-y-4">
+            <div class="flex items-center justify-between border-b border-gray-100 pb-3">
+                <h3 class="text-base font-extrabold font-outfit text-gray-900">Wholesale Price Benchmarks</h3>
+                <a href="{{ url_for('admin.suppliers') }}" class="text-xs text-amber-600 font-bold hover:underline">Manage</a>
+            </div>
+
+            <div class="space-y-3">
+                {% for s in suppliers %}
+                <div class="p-4 rounded-2xl border transition {% if s.is_preferred %}bg-amber-50/70 border-amber-300 ring-2 ring-amber-300/40{% else %}bg-gray-50 border-gray-200{% endif %}">
+                    <div class="flex items-start justify-between">
+                        <div>
+                            <h4 class="text-sm font-bold text-gray-900">{{ s.name }}</h4>
+                            <p class="text-[11px] text-gray-500 mt-0.5"><i class="fa-solid fa-location-dot text-amber-500 mr-1"></i> {{ s.location }}</p>
+                        </div>
+                        <div class="text-right">
+                            <span class="text-base font-black font-outfit text-amber-700">₹{{ "%.2f"|format(s.price_per_egg) }}</span>
+                            <span class="text-[10px] text-gray-400 block">per egg</span>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center justify-between pt-3 mt-2 border-t border-gray-200/60 text-xs">
+                        <span class="text-gray-500">MOQ: <strong>{{ s.min_order_qty }} eggs</strong></span>
+                        <a href="tel:{{ s.phone }}" class="text-amber-700 font-semibold hover:underline">
+                            <i class="fa-solid fa-phone mr-1"></i> {{ s.phone }}
+                        </a>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+    </div>
+
+    <!-- RECENT PURCHASE BATCHES HISTORY -->
+    <div class="bg-white rounded-3xl border border-gray-200 shadow-sm overflow-hidden">
+        <div class="p-6 border-b border-gray-200 flex items-center justify-between">
+            <div>
+                <h3 class="text-base font-extrabold font-outfit text-gray-900">Wholesale Purchase History</h3>
+                <p class="text-xs text-gray-500">Batches procured from poultry suppliers</p>
+            </div>
+        </div>
+
+        <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs">
+                <thead class="bg-gray-50 text-gray-500 font-bold uppercase tracking-wider border-b border-gray-200">
+                    <tr>
+                        <th class="py-3.5 px-4">Batch ID</th>
+                        <th class="py-3.5 px-4">Date</th>
+                        <th class="py-3.5 px-4">Supplier</th>
+                        <th class="py-3.5 px-4">Eggs Procured</th>
+                        <th class="py-3.5 px-4">Rate</th>
+                        <th class="py-3.5 px-4">Total Cost</th>
+                        <th class="py-3.5 px-4">Invoice Ref</th>
+                        <th class="py-3.5 px-4 text-right">Slip</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-100 font-medium">
+                    {% for b in recent_batches %}
+                    <tr class="hover:bg-gray-50 transition">
+                        <td class="py-3.5 px-4 font-mono font-bold text-gray-900">{{ b.batch_code }}</td>
+                        <td class="py-3.5 px-4 text-gray-600">{{ b.purchase_date.strftime('%d %b %Y') }}</td>
+                        <td class="py-3.5 px-4 font-bold text-gray-900">{{ b.supplier.name }}</td>
+                        <td class="py-3.5 px-4 font-black text-amber-600 font-outfit text-sm">{{ b.total_eggs }}</td>
+                        <td class="py-3.5 px-4 text-gray-700">₹{{ "%.2f"|format(b.price_per_egg) }}</td>
+                        <td class="py-3.5 px-4 font-bold text-gray-900">₹{{ "%.2f"|format(b.total_cost) }}</td>
+                        <td class="py-3.5 px-4 font-mono text-gray-500">{{ b.invoice_number or 'N/A' }}</td>
+                        <td class="py-3.5 px-4 text-right">
+                            <a href="{{ url_for('admin.wholesale_slip', batch_id=b.id) }}" target="_blank" class="px-2.5 py-1 bg-gray-100 hover:bg-gray-200 text-gray-800 font-bold rounded-lg transition" title="Print Purchase Slip">
+                                <i class="fa-solid fa-print mr-1"></i> Slip
+                            </a>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="8" class="py-6 text-center text-gray-400">No purchase batches recorded yet.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+function updateSupplierRate(selectEl) {
+    const opt = selectEl.options[selectEl.selectedIndex];
+    const rate = opt.getAttribute('data-rate');
+    if (rate) {
+        document.getElementById('price_per_egg').value = rate;
+    }
+    recalcWholesaleCost();
+}
+
+function recalcWholesaleCost() {
+    const qty = parseInt(document.getElementById('quantity').value) || 0;
+    const rate = parseFloat(document.getElementById('price_per_egg').value) || 0.0;
+    const total = qty * rate;
+    document.getElementById('calculatedBatchCost').textContent = '₹' + total.toFixed(2);
+}
+
+document.addEventListener('DOMContentLoaded', recalcWholesaleCost);
+</script>
+{% endblock %}

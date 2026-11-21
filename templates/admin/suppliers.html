@@ -1,0 +1,141 @@
+{% extends 'admin/layout.html' %}
+
+{% block page_title %}Wholesale Supplier Directory{% endblock %}
+
+{% block content %}
+<div class="space-y-8">
+
+    <!-- Header & Add Action -->
+    <div class="bg-white p-6 rounded-3xl border border-gray-200 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div>
+            <h2 class="text-xl font-extrabold font-outfit text-gray-900">Poultry Farms & Egg Suppliers</h2>
+            <p class="text-xs text-gray-500">Benchmark prices, minimum order quantities (MOQ), and set the default preferred supplier.</p>
+        </div>
+
+        <button onclick="openModal('addSupplierModal')" class="bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 text-egg-dark font-extrabold text-xs px-5 py-3 rounded-2xl shadow-md transition whitespace-nowrap">
+            <i class="fa-solid fa-plus mr-1.5"></i> Add New Supplier
+        </button>
+    </div>
+
+    <!-- Suppliers Grid -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        {% for s in suppliers %}
+        <div class="bg-white rounded-3xl border {% if s.is_preferred %}border-amber-400 ring-2 ring-amber-400/20 shadow-lg{% else %}border-gray-200 shadow-sm{% endif %} p-6 flex flex-col justify-between space-y-6">
+            
+            <div class="space-y-3">
+                <div class="flex items-center justify-between">
+                    <span class="text-xs font-bold px-2.5 py-0.5 rounded-full {% if s.availability_status == 'AVAILABLE' %}bg-emerald-100 text-emerald-800{% else %}bg-amber-100 text-amber-800{% endif %}">
+                        {{ s.availability_status }}
+                    </span>
+
+                    {% if s.is_preferred %}
+                    <span class="bg-amber-500 text-egg-dark text-[10px] font-black uppercase px-2 py-0.5 rounded-md">
+                        ★ Preferred Sourcing
+                    </span>
+                    {% endif %}
+                </div>
+
+                <div>
+                    <h3 class="text-lg font-bold font-outfit text-gray-900">{{ s.name }}</h3>
+                    <p class="text-xs text-gray-500 mt-1"><i class="fa-solid fa-location-dot text-amber-500 mr-1"></i> {{ s.location }}</p>
+                </div>
+
+                <div class="bg-amber-50/60 p-4 rounded-2xl border border-amber-200 space-y-2">
+                    <div class="flex justify-between items-baseline">
+                        <span class="text-xs text-gray-600">Wholesale Price:</span>
+                        <span class="text-2xl font-black font-outfit text-amber-700">₹{{ "%.2f"|format(s.price_per_egg) }}</span>
+                    </div>
+                    <div class="flex justify-between text-xs text-gray-600">
+                        <span>Min Order Qty (MOQ):</span>
+                        <span class="font-bold text-gray-900">{{ s.min_order_qty }} eggs</span>
+                    </div>
+                </div>
+
+                <div class="text-xs text-gray-600 space-y-1">
+                    <p><i class="fa-solid fa-user text-gray-400 mr-1.5"></i> Contact: <strong>{{ s.contact_person or 'Manager' }}</strong></p>
+                    <p><i class="fa-solid fa-phone text-gray-400 mr-1.5"></i> Phone: <a href="tel:{{ s.phone }}" class="text-amber-700 font-bold hover:underline">{{ s.phone }}</a></p>
+                    {% if s.notes %}
+                    <p class="text-gray-500 text-[11px] italic pt-1">"{{ s.notes }}"</p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="pt-4 border-t border-gray-100 flex items-center justify-between">
+                {% if not s.is_preferred %}
+                <form action="{{ url_for('admin.set_preferred_supplier', supplier_id=s.id) }}" method="POST" class="w-full">
+                    <button type="submit" class="w-full py-2 bg-gray-100 hover:bg-amber-100 hover:text-amber-900 text-gray-800 rounded-xl text-xs font-bold transition">
+                        Set As Preferred Supplier
+                    </button>
+                </form>
+                {% else %}
+                <span class="text-xs text-emerald-600 font-bold flex items-center">
+                    <i class="fa-solid fa-circle-check mr-1.5"></i> Auto-selected in Wholesale engine
+                </span>
+                {% endif %}
+            </div>
+
+        </div>
+        {% endfor %}
+    </div>
+
+</div>
+
+<!-- ADD SUPPLIER MODAL -->
+<div id="addSupplierModal" class="fixed inset-0 bg-black/60 z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl max-w-md w-full p-6 sm:p-8 shadow-2xl relative">
+        <button onclick="closeModal('addSupplierModal')" class="absolute top-5 right-5 text-gray-400 hover:text-gray-600">
+            <i class="fa-solid fa-xmark text-lg"></i>
+        </button>
+
+        <div class="mb-5">
+            <span class="text-xs font-bold text-amber-600 uppercase tracking-wider">Wholesale Source</span>
+            <h3 class="text-xl font-extrabold font-outfit text-gray-900">Add Poultry Farm Supplier</h3>
+        </div>
+
+        <form action="{{ url_for('admin.add_supplier') }}" method="POST" class="space-y-4">
+            <div>
+                <label for="sup_name" class="block text-xs font-bold text-gray-700 mb-1">Supplier Farm Name <span class="text-rose-500">*</span></label>
+                <input type="text" name="name" id="sup_name" placeholder="e.g. Kaveri Agro Farms" class="w-full bg-gray-50 border border-gray-300 rounded-xl px-4 py-2 text-xs font-bold focus:ring-2 focus:ring-amber-500 focus:outline-none" required>
+            </div>
+
+            <div class="grid grid-cols-2 gap-3">
+                <div>
+                    <label for="sup_price" class="block text-xs font-bold text-gray-700 mb-1">Price per Egg (₹) <span class="text-rose-500">*</span></label>
+                    <input type="number" step="0.05" name="price_per_egg" id="sup_price" value="4.85" class="w-full bg-gray-50 border border-gray-300 rounded-xl px-3 py-2 text-xs font-bold focus:ring-2 focus:ring-amber-500 focus:outline-none" required>
+                </div>
+                <div>
+                    <label for="sup_moq" class="block text-xs font-bold text-gray-700 mb-1">Min Order Qty (MOQ)</label>
+                    <input type="number" name="min_order_qty" id="sup_moq" value="150" class="w-full bg-gray-50 border border-gray-300 rounded-xl px-3 py-2 text-xs font-bold focus:ring-2 focus:ring-amber-500 focus:outline-none">
+                </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-3">
+                <div>
+                    <label for="sup_phone" class="block text-xs font-bold text-gray-700 mb-1">Phone Number <span class="text-rose-500">*</span></label>
+                    <input type="tel" name="phone" id="sup_phone" placeholder="9845012345" class="w-full bg-gray-50 border border-gray-300 rounded-xl px-3 py-2 text-xs focus:ring-2 focus:ring-amber-500 focus:outline-none" required>
+                </div>
+                <div>
+                    <label for="sup_contact" class="block text-xs font-bold text-gray-700 mb-1">Contact Person</label>
+                    <input type="text" name="contact_person" id="sup_contact" placeholder="Manager Name" class="w-full bg-gray-50 border border-gray-300 rounded-xl px-3 py-2 text-xs focus:ring-2 focus:ring-amber-500 focus:outline-none">
+                </div>
+            </div>
+
+            <div>
+                <label for="sup_loc" class="block text-xs font-bold text-gray-700 mb-1">Farm / Warehouse Location <span class="text-rose-500">*</span></label>
+                <input type="text" name="location" id="sup_loc" placeholder="e.g. Doddaballapur Poultry Belt" class="w-full bg-gray-50 border border-gray-300 rounded-xl px-4 py-2 text-xs focus:ring-2 focus:ring-amber-500 focus:outline-none" required>
+            </div>
+
+            <div class="flex items-center space-x-2 pt-1">
+                <input type="checkbox" name="is_preferred" id="is_preferred" class="rounded text-amber-600 focus:ring-amber-500">
+                <label for="is_preferred" class="text-xs font-semibold text-gray-700">Set as Primary Preferred Supplier</label>
+            </div>
+
+            <div class="pt-2">
+                <button type="submit" class="w-full py-3 bg-gradient-to-r from-amber-500 to-amber-600 text-egg-dark font-black rounded-xl text-xs transition shadow-md font-outfit">
+                    Save Supplier
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

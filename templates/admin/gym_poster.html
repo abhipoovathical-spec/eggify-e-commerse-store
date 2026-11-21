@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EGGIFY Gym Poster | {{ gym.name }}</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@600;700;800;900&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @page {
+            size: A4 portrait;
+            margin: 0;
+        }
+        @media print {
+            body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .no-print { display: none !important; }
+        }
+    </style>
+</head>
+<body class="bg-gray-100 flex flex-col items-center p-4 sm:p-8 font-sans">
+
+    <!-- Top floating print toolbar -->
+    <div class="max-w-2xl w-full mb-6 flex items-center justify-between no-print">
+        <a href="{{ url_for('admin.gyms') }}" class="text-xs font-bold text-gray-600 hover:text-gray-900">
+            ← Back to Gyms
+        </a>
+        <div class="flex space-x-3">
+            <button onclick="window.print()" class="px-5 py-2.5 bg-amber-500 hover:bg-amber-400 text-gray-950 font-black rounded-xl text-xs shadow-lg transition flex items-center space-x-2">
+                <i class="fa-solid fa-print"></i>
+                <span>Print Gym Standee Poster</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- The Printable Poster Sheet (Standard A4 Proportions) -->
+    <div class="w-full max-w-2xl bg-[#0F1115] text-white rounded-3xl p-10 sm:p-14 border border-gray-800 shadow-2xl relative overflow-hidden text-center space-y-8">
+        
+        <!-- Corner Glow Accents -->
+        <div class="absolute -top-32 -left-32 w-80 h-80 bg-amber-500/15 rounded-full blur-3xl pointer-events-none"></div>
+        <div class="absolute -bottom-32 -right-32 w-80 h-80 bg-amber-500/15 rounded-full blur-3xl pointer-events-none"></div>
+
+        <!-- Top Header & Logo -->
+        <div class="space-y-3 relative z-10">
+            <div class="inline-flex items-center space-x-2 bg-amber-400/10 border border-amber-400/30 text-amber-300 px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-widest">
+                <i class="fa-solid fa-fire text-amber-400"></i>
+                <span>Official Fresh Protein Station</span>
+            </div>
+
+            <div class="flex items-center justify-center space-x-3 pt-2">
+                <div class="w-14 h-14 rounded-2xl bg-gradient-to-tr from-amber-500 to-amber-300 flex items-center justify-center text-gray-950 shadow-xl shadow-amber-500/20">
+                    <i class="fa-solid fa-egg text-3xl"></i>
+                </div>
+                <h1 class="text-4xl sm:text-5xl font-black font-outfit text-white tracking-wider">EGG<span class="text-amber-400">IFY</span></h1>
+            </div>
+
+            <p class="text-sm font-semibold text-gray-300 uppercase tracking-widest">Fresh Eggs. Smart Ordering. Better Fitness.</p>
+        </div>
+
+        <!-- Gym Dedicated Banner -->
+        <div class="bg-gray-800/80 border border-gray-700/80 rounded-2xl p-4 relative z-10 max-w-lg mx-auto">
+            <span class="text-[10px] text-amber-400 font-bold uppercase tracking-widest block">Exclusively Sourced For</span>
+            <h2 class="text-xl sm:text-2xl font-extrabold font-outfit text-white mt-0.5">{{ gym.name }}</h2>
+            <p class="text-xs text-gray-400 mt-1">Gym Code: <strong class="text-white font-mono">{{ gym.gym_code }}</strong></p>
+        </div>
+
+        <!-- Big Center High-Res QR Code -->
+        <div class="relative z-10 space-y-4">
+            <div class="inline-block p-6 bg-white rounded-3xl border-4 border-amber-400 shadow-2xl">
+                <img src="{{ qr_data_url }}" alt="Scan To Order" class="w-64 h-64 sm:w-72 sm:h-72 mx-auto">
+            </div>
+
+            <div class="space-y-1">
+                <h3 class="text-2xl font-black font-outfit text-amber-400">SCAN TO ORDER FRESH EGGS</h3>
+                <p class="text-xs text-gray-400 max-w-sm mx-auto">
+                    Open Camera or any QR scanner • Instant UPI Payment • Collect fresh at Gym Front Desk!
+                </p>
+            </div>
+        </div>
+
+        <!-- 3 Simple Member Steps -->
+        <div class="grid grid-cols-3 gap-3 pt-4 border-t border-gray-800 relative z-10 text-xs">
+            <div class="bg-gray-900/90 p-3 rounded-xl border border-gray-800">
+                <span class="text-amber-400 font-black text-sm block">1</span>
+                <span class="font-bold text-gray-200 block mt-1">Scan QR Code</span>
+                <span class="text-[10px] text-gray-400">Auto gym detected</span>
+            </div>
+            <div class="bg-gray-900/90 p-3 rounded-xl border border-gray-800">
+                <span class="text-amber-400 font-black text-sm block">2</span>
+                <span class="font-bold text-gray-200 block mt-1">Pick Quantity</span>
+                <span class="text-[10px] text-gray-400">6, 12, 18, 30, 60</span>
+            </div>
+            <div class="bg-gray-900/90 p-3 rounded-xl border border-gray-800">
+                <span class="text-amber-400 font-black text-sm block">3</span>
+                <span class="font-bold text-gray-200 block mt-1">Collect at Desk</span>
+                <span class="text-[10px] text-gray-400">Post-workout grab</span>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="pt-4 text-center text-xs text-gray-400 relative z-10">
+            <p>Direct Farm Wholesale • Sanitized Normal Fresh Eggs • High Bioavailable Protein</p>
+            <p class="text-[10px] text-amber-500/80 font-mono mt-1">Order Link: {{ order_url }}</p>
+        </div>
+
+    </div>
+
+</body>
+</html>
